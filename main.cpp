@@ -1,11 +1,3 @@
-/******************************************************************************
-
-                              Online C++ Compiler.
-               Code, Compile, Run and Debug C++ program online.
-Write your code in this editor and press "Run" button to compile and execute it.
-
-*******************************************************************************/
-
 #include <iostream>
 using namespace std;
 
@@ -18,6 +10,7 @@ class MempoolNode {
         MempoolNode(){
             data = new char[sizeof(T)];
         }
+        
 };
 
 
@@ -59,12 +52,11 @@ public:
 	    cout << "allocation sucess!" << endl;
 	    return part;
 	}
-	void deallocate(void* ptr){
+	void deallocate(T* ptr){
+	    MempoolNode<T>* temp = (MempoolNode<T>*)ptr;
 	    	    cout << "deallocation starts!" << endl;
-
-	    MempoolNode<T>* part = freeNodes;
-	    ((MempoolNode<T>*)ptr)->bFree = part;
-	    freeNodes=((MempoolNode<T>*)ptr);
+	    (temp)->bFree = freeNodes;
+	    freeNodes=temp;
 	    cout << freeNodes << endl;
 	    cout << "deallocation sucess!" << endl;
 	   // return freeNodes
@@ -80,34 +72,29 @@ public:
 	int sucess_status;
 	OrderResponse(int ts_, int status_) {
 		ts = ts_;
-		status_ = status_;
+		sucess_status = status_;
 	}
 	void print(){
 	    cout << " Timestamp " << ts << " sucess_status " << sucess_status << endl;
 	}
 };
+int main() {
+    Mempool<OrderResponse> temp = Mempool<OrderResponse>(2);
+    temp.Check_For_Size();
 
-int main()
-{
-	Mempool<OrderResponse> temp = Mempool<OrderResponse>(2);
-	temp.Check_For_Size();
-	OrderResponse* OR1 = (OrderResponse*)temp.allocate();
-	OR1->ts = 1;
-	OR1->sucess_status = 1;
-	OrderResponse* OR2 = (OrderResponse*)temp.allocate();
-	OR2->ts = 2;
-	OR2->sucess_status = 2;
-	temp.deallocate(OR1);
-	OrderResponse* OR3 = (OrderResponse*)temp.allocate();
-	OR3->ts = 3;
-	OR3->sucess_status = 3;
-// 	OrderResponse* OR4 = (OrderResponse*)temp.allocate();
-// 	OR4->ts = 3;
-// 	OR4->sucess_status = 3;
+    OrderResponse* OR1 = new (temp.allocate()) OrderResponse(1, 1);
+    OrderResponse* OR2 = new (temp.allocate()) OrderResponse(2, 2);
+    OR1->print();
+    OR2->print();
 
-// 	OR1->print();
-	OR2->print();
-	OR3->print();
-// 	OR4->print();
-	return 0;
+    temp.deallocate(OR1);
+
+    OrderResponse* OR3 = new (temp.allocate()) OrderResponse(3, 3);
+    OR3->print();
+
+    // Optional cleanup
+    OR2->~OrderResponse();
+    OR3->~OrderResponse();
+
+    return 0;
 }
