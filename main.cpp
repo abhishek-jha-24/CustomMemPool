@@ -47,10 +47,10 @@ public:
 	        cout << "Cannot allocate aanymore" << endl;
 	        return nullptr;
 	    }
-	    void* part =  freeNodes->data;
+	    void* temp =  freeNodes;
 	    freeNodes = freeNodes->bFree;
 	    cout << "allocation sucess!" << endl;
-	    return part;
+	    return temp;
 	}
 	void deallocate(T* ptr){
 	    MempoolNode<T>* temp = (MempoolNode<T>*)ptr;
@@ -90,6 +90,7 @@ int main() {
     temp.deallocate(OR1);
 
     OrderResponse* OR3 = new (temp.allocate()) OrderResponse(3, 3);
+    OR2->print();
     OR3->print();
 
     // Optional cleanup
