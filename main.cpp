@@ -2,103 +2,121 @@
 using namespace std;
 
 template<typename T>
-class MempoolNode {
-    public:
-        T data;
-        MempoolNode* next;
-        MempoolNode* bFree;
-        MempoolNode(){
-            cout << "creatign node .." << endl;
-        }
-       
-};
+class MemoryPoolNode {
+public:
+    T data;
+    MemoryPoolNode* next;
+    MemoryPoolNode* nextFree;
 
+    MemoryPoolNode() {
+        cout << "Creating node..." << endl;
+    }
+
+    ~MemoryPoolNode() {
+        cout << "Deallocating node..." << endl;
+        next = nullptr;
+        nextFree = nullptr;
+    }
+};
 
 template <typename T>
-class Mempool {
+class MemoryPool {
+private:
+    int totalNodes;
+    MemoryPoolNode<T>* poolHead = nullptr;
+    MemoryPoolNode<T>* freeListHead = nullptr;
+
 public:
-int nodes;
-int size;
-char* raw_mem;
-int prev;
-MempoolNode<T>* head=nullptr;
-MempoolNode<T>* freeNodes=nullptr;
-Mempool(int nodes_) {
-   nodes = nodes_;
-   for(int i = 0; i< nodes_; i++){
-       cout << " creating node " << i << endl;
-       MempoolNode<T>* new_node = new MempoolNode<T>();
-       new_node->next = head;
-       new_node->bFree = head;
-       head = new_node;
-   }
-   freeNodes=head;
-}
-void Check_For_Size() {
-   cout << "Checking no of linkedlist elements" << endl;
-   MempoolNode<T>* temp = head;
-    while(temp){
-       temp=temp->next;
-       cout << " going ... " << endl;
+    MemoryPool(int totalNodes_) : totalNodes(totalNodes_) {
+        for (int i = 0; i < totalNodes; i++) {
+            cout << "Creating node " << i << endl;
+            MemoryPoolNode<T>* newNode = new MemoryPoolNode<T>();
+            newNode->next = poolHead;
+            newNode->nextFree = poolHead;
+            poolHead = newNode;
+        }
+        freeListHead = poolHead;
     }
-}
-T* allocate(){
-   if(!freeNodes){
-       cout << "Cannot allocate aanymore" << endl;
-       return nullptr;
-   }
-   MempoolNode<T>* temp =  freeNodes;
-   freeNodes = freeNodes->bFree;
-   cout << "allocation sucess!" << endl;
-   return &(temp->data);
-}
-void deallocate(T* ptr){
-   MempoolNode<T>* temp = (MempoolNode<T>*)ptr;
-       cout << "deallocation starts!" << endl;
-   (temp)->bFree = freeNodes;
-   freeNodes=temp;
-   cout << freeNodes << endl;
-   cout << "deallocation sucess!" << endl;
-  // return freeNodes
-}
 
+    void checkSize() {
+        cout << "Checking number of linked list elements..." << endl;
+        MemoryPoolNode<T>* current = poolHead;
+        while (current) {
+            cout << "Walking through list..." << endl;
+            current = current->next;
+        }
+    }
 
+    T* allocate() {
+        if (!freeListHead) {
+            cout << "No free nodes available for allocation." << endl;
+            return nullptr;
+        }
+
+        MemoryPoolNode<T>* allocatedNode = freeListHead;
+        freeListHead = freeListHead->nextFree;
+        cout << "Allocation successful!" << endl;
+        return &(allocatedNode->data);
+    }
+
+    void deallocate(T* ptr) {
+        MemoryPoolNode<T>* nodeToFree = (MemoryPoolNode<T>*) ptr;
+
+        cout << "Starting deallocation..." << endl;
+        nodeToFree->nextFree = freeListHead;
+        freeListHead = nodeToFree;
+        cout << "Deallocation successful!" << endl;
+    }
+
+    ~MemoryPool() {
+        cout << "Destroying memory pool..." << endl;
+        MemoryPoolNode<T>* current = poolHead;
+        MemoryPoolNode<T>* temp;
+
+        while (current) {
+            current->data.~T();  // Manually call destructor for contained objects
+            temp = current;
+            current = current->next;
+            delete temp;
+        }
+    }
 };
-
 
 class OrderResponse {
 public:
-int ts;
-int sucess_status;
-OrderResponse() {
+    int timestamp;
+    int successStatus;
 
-}
-OrderResponse(int ts_, int status_) {
-ts = ts_;
-sucess_status = status_;
-}
-void print(){
-   cout << " Timestamp " << ts << " sucess_status " << sucess_status << endl;
-}
+    OrderResponse() = default;
+
+    OrderResponse(int ts, int status) {
+        timestamp = ts;
+        successStatus = status;
+    }
+
+    void print() const {
+        cout << "Timestamp: " << timestamp << ", Success Status: " << successStatus << endl;
+    }
+
+    ~OrderResponse() {
+        cout << "Destroyed OrderResponse" << endl;
+    }
 };
+
 int main() {
-    Mempool<OrderResponse> temp = Mempool<OrderResponse>(2);
-    temp.Check_For_Size();
+    MemoryPool<OrderResponse> pool(28);
+    pool.checkSize();
 
-    OrderResponse* OR1 = new (temp.allocate()) OrderResponse(1, 1);
-    OrderResponse* OR2 = new (temp.allocate()) OrderResponse(2, 2);
-    OR1->print();
-    OR2->print();
+    OrderResponse* or1 = new (pool.allocate()) OrderResponse(1, 1);
+    OrderResponse* or2 = new (pool.allocate()) OrderResponse(2, 2);
+    or1->print();
+    or2->print();
 
-    temp.deallocate(OR1);
+    pool.deallocate(or1);
 
-    OrderResponse* OR3 = new (temp.allocate()) OrderResponse(3, 3);
-    OR2->print();
-    OR3->print();
-
-    // Optional cleanup
-    OR2->~OrderResponse();
-    OR3->~OrderResponse();
+    OrderResponse* or3 = new (pool.allocate()) OrderResponse(3, 3);
+    or2->print();
+    or3->print();
 
     return 0;
 }
