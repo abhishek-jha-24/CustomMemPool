@@ -11,7 +11,7 @@ Key Features:
 
 🔐 Thread-safe operations using atomic operations and a custom spinlock.
 
-⚡ Zero heap fragmentation and reduced allocation/deallocation latency.
+⚡ Least heap fragmentation and reduced allocation/deallocation latency.
 
 🔧 In-place construction of objects via placement new.
 
